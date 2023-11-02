@@ -42,7 +42,7 @@ export class CartManager {
 
     async getCartById(id) {
         try {
-            const carts = await this.getcarts();
+            const carts = await this.getCarts();
             const cart = carts.find(c => c.id === id);
             if (!cart) return false;
             return cart;
@@ -52,20 +52,28 @@ export class CartManager {
     }
 
     async saveProductToCart(idCart, idProd) {
-        const carts = await this.getCarts();
-        const cartExists = await this.getCartById(idCart);
-        if (cartExists) {
-            const existProdInCart = cartExists.products.find(p => p.id === idProd);
-            if (existProdInCart) existProdInCart.quantity + 1
-            else {
-                const prod = {
-                    product: idProd,
-                    quantity: 1
-                };
-                cartExists.products.push(prod);
+        try {
+            const carts = await this.getCarts();
+            const cartExists = await this.getCartById(idCart);
+            if (cartExists) {
+                const existProdInCart = cartExists.products.find(p => p.product === idProd);
+                if (existProdInCart) {
+                    existProdInCart.quantity += 1; 
+                } else {
+                    const prod = {
+                        product: idProd,
+                        quantity: 1
+                    };
+                    cartExists.products.push(prod);
+                }
+                const updatedCarts = carts.map(cart => (cart.id === idCart ? cartExists : cart));
+                await fs.promises.writeFile(this.path, JSON.stringify(updatedCarts));
+                return cartExists;
             }
-            await fs.promises.writeFile(this.path, JSON.stringify(carts));
-            return cartExists;
+        } catch (error) {
+            console.log(error);
         }
     }
 }
+
+export default CartManager;
